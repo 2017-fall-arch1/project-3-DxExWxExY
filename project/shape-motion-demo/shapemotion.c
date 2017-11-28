@@ -15,48 +15,75 @@
 #include <abCircle.h>
 
 #define GREEN_LED BIT6
+#define SWITCHES (BIT0 | BIT1 | BIT2 | BIT3)
 
 /*SHAPE DEFINITION SECTION {width, height}  */
-AbRect rect5 = {abRectGetBounds, abRectCheck, {5,5}};
-AbRect rect10 = {abRectGetBounds, abRectCheck, {10,10}};
+AbRect ball = {abRectGetBounds, abRectCheck, {5,5}};
 AbRect pL = {abRectGetBounds, abRectCheck, {1,10}};
 AbRect pR = {abRectGetBounds, abRectCheck, {1,10}};
 
-/*LAYER DEFINITION SECTION*/
+/*OUTLINE DEFINITION SECTION*/
 AbRectOutline fieldOutline = {	/* playing field */
   abRectOutlineGetBounds, abRectOutlineCheck,   
-  {screenWidth/2, screenHeight/2}
+  {screenWidth/2-3, screenHeight/2-3}
 };
 
-Layer layer4 = { //Left Paddle
+AbRectOutline pLOut = {	//Left Paddle Outline
+  abRectOutlineGetBounds, abRectOutlineCheck,   
+  {2, 10}
+};
+
+AbRectOutline pROut = {	//Right Paddle Outline
+  abRectOutlineGetBounds, abRectOutlineCheck,   
+  {2,10}
+};
+
+/*LAYER DEFINITION SECTION*/
+Layer pl = { //Left Paddle
   (AbShape *)&pL,
-  {2, (screenHeight/2)}, 
+  {5, (screenHeight/2)}, 
   {0,0}, {0,0},		
   COLOR_WHITE,
   0
 };
+
+Layer plo = { //Left Paddle
+  (AbShape *)&pLOut,
+  {5, (screenHeight/2)}, 
+  {0,0}, {0,0},		
+  COLOR_GREEN,
+  &pl,
+};
   
-Layer layer3 = { //Right Paddle
+Layer pr = { //Right Paddle 
   (AbShape *)&pR,
-  {screenWidth-2, (screenHeight/2)},
+  {screenWidth-6, (screenHeight/2)},
   {0,0}, {0,0},	      
   COLOR_WHITE,
-  &layer4,
+  &plo,
+};
+
+Layer pro = { //Right Paddle Outline
+  (AbShape *)&pROut,
+  {screenWidth-6, (screenHeight/2)}, 
+  {0,0}, {0,0},		
+  COLOR_GREEN,
+  &pr,
 };
 
 Layer fieldLayer = {		/* playing field as a layer */
   (AbShape *) &fieldOutline,
-  {screenWidth/2, screenHeight/2}, /**< center */
+  {screenWidth/2, screenHeight/2},          /**< center */
   {0,0}, {0,0},				    /* last & next pos */
   COLOR_BLACK,
-  &layer3
+  &pro
 };
 
 Layer layer0 = { //Ball
-  (AbShape *)&rect5,
+  (AbShape *)&ball,
   {(screenWidth/2), (screenHeight/2)}, 
   {0,0}, {0,0},	  
-  COLOR_WHITE,
+  COLOR_RED,
   &fieldLayer,
 };
 
@@ -71,8 +98,55 @@ typedef struct MovLayer_s {
 } MovLayer;
 
 /* initial value of {0,0} will be overwritten */
-/**< not all layers move */
-MovLayer ml0 = { &layer0, {2,1}, 0 }; 
+/*LEFT PADDLE UP*/
+MovLayer pLU = {&pl, {0,2}, 0};
+MovLayer pLOU = {&plo, {0,2}, &pLU};
+/*LEFT PADDLE DOWN*/
+MovLayer pLD = {&pl, {0,-2}, 0};
+MovLayer pLOD = {&plo, {0,-2}, &pLD};
+/*RIGHT PADDLE UP*/
+MovLayer pRU = {&pr, {0,2}, 0};
+MovLayer pROU = {&pro, {0,2}, &pRU};
+/*RIGHT PADDLE DOWN*/
+MovLayer pRD = {&pr, {0,-2}, 0};
+MovLayer pROD = {&pro, {0,-2}, &pRD};
+
+MovLayer ml0 = {&layer0, {1,2}, 0};
+
+void movPaddle() {
+  char p2val = P2IN;
+  if (p2val & BIT0) {
+    P2IES |= (p2val & SWITCHES);
+  }
+  else if (p2val | BIT0) {
+    ml0.next = *pLOU;
+  }
+  /* if (p2val & SW2) { */
+  /*   swd2 = 0; */
+  /*   P2IES |= (p2val & SWITCHES); */
+  /* } */
+  /* else if (p2val | SW2) { */
+  /*   swd2 = 1; */
+  /*   clocksSong(); */
+  /* } */
+  /* if (p2val & SW3) { */
+  /*   swd3 = 0; */
+  /*   P2IES |= (p2val & SWITCHES); */
+  /* } */
+  /* else if (p2val | SW3) { */
+  /*   swd3 = 1; */
+  /*   imBlue(); */
+  /* } */
+  /* if (p2val & SW4) { */
+  /*   swd4 = 0; */
+  /*   P2IES |= (p2val & SWITCHES); */
+  /* } */
+  /* else if (p2val | SW4) { */
+  /*   swd4 = 1; */
+  /*   xfiles(); */
+  /* } */
+  ml0.next = 0;
+}
 
 void movLayerDraw(MovLayer *movLayers, Layer *layers)
 {
@@ -144,6 +218,8 @@ u_int bgColor = COLOR_BLACK;     /**< The background color */
 int redrawScreen = 1;           /**< Boolean for whether screen needs to be redrawn */
 
 Region fieldFence;		/**< fence around playing field  */
+Region pLFence;
+Region pRFence;
 
 
 /** Initializes everything, enables interrupts and green LED, 
@@ -158,15 +234,14 @@ void main()
   lcd_init();
   shapeInit();
   p2sw_init(1);
-
   shapeInit();
-
   layerInit(&layer0);
   layerDraw(&layer0);
 
 
   layerGetBounds(&fieldLayer, &fieldFence);
-
+  //layerGetBounds(&plo, &pLFence);
+  //layerGetBounds(&pro, &pRFence);
 
   enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
@@ -191,6 +266,8 @@ void wdt_c_handler()
   count ++;
   if (count == 15) {
     mlAdvance(&ml0, &fieldFence);
+    //mlAdvance(&ml0, &pLFence);
+    //mlAdvance(&ml0, &pRFence);
     if (p2sw_read())
       redrawScreen = 1;
     count = 0;
