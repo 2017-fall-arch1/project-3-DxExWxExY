@@ -16,55 +16,48 @@
 
 #define GREEN_LED BIT6
 
+/*SHAPE DEFINITION SECTION {width, height}  */
+AbRect rect5 = {abRectGetBounds, abRectCheck, {5,5}};
+AbRect rect10 = {abRectGetBounds, abRectCheck, {10,10}};
+AbRect pL = {abRectGetBounds, abRectCheck, {1,10}};
+AbRect pR = {abRectGetBounds, abRectCheck, {1,10}};
 
-AbRect rect10 = {abRectGetBounds, abRectCheck, {10,10}}; /**< 10x10 rectangle */
-AbRArrow rightArrow = {abRArrowGetBounds, abRArrowCheck, 30};
-
+/*LAYER DEFINITION SECTION*/
 AbRectOutline fieldOutline = {	/* playing field */
   abRectOutlineGetBounds, abRectOutlineCheck,   
-  {screenWidth/2 - 10, screenHeight/2 - 10}
+  {screenWidth/2, screenHeight/2}
 };
 
-Layer layer4 = {
-  (AbShape *)&rightArrow,
-  {(screenWidth/2)+10, (screenHeight/2)+5}, /**< bit below & right of center */
-  {0,0}, {0,0},				    /* last & next pos */
-  COLOR_PINK,
+Layer layer4 = { //Left Paddle
+  (AbShape *)&pL,
+  {2, (screenHeight/2)}, 
+  {0,0}, {0,0},		
+  COLOR_WHITE,
   0
 };
   
-
-Layer layer3 = {		/**< Layer with an orange circle */
-  (AbShape *)&circle8,
-  {(screenWidth/2)+10, (screenHeight/2)+5}, /**< bit below & right of center */
-  {0,0}, {0,0},				    /* last & next pos */
-  COLOR_VIOLET,
+Layer layer3 = { //Right Paddle
+  (AbShape *)&pR,
+  {screenWidth-2, (screenHeight/2)},
+  {0,0}, {0,0},	      
+  COLOR_WHITE,
   &layer4,
 };
 
-
 Layer fieldLayer = {		/* playing field as a layer */
   (AbShape *) &fieldOutline,
-  {screenWidth/2, screenHeight/2},/**< center */
+  {screenWidth/2, screenHeight/2}, /**< center */
   {0,0}, {0,0},				    /* last & next pos */
   COLOR_BLACK,
   &layer3
 };
 
-Layer layer1 = {		/**< Layer with a red square */
-  (AbShape *)&rect10,
-  {screenWidth/2, screenHeight/2}, /**< center */
-  {0,0}, {0,0},				    /* last & next pos */
-  COLOR_RED,
+Layer layer0 = { //Ball
+  (AbShape *)&rect5,
+  {(screenWidth/2), (screenHeight/2)}, 
+  {0,0}, {0,0},	  
+  COLOR_WHITE,
   &fieldLayer,
-};
-
-Layer layer0 = {		/**< Layer with an orange circle */
-  (AbShape *)&circle14,
-  {(screenWidth/2)+10, (screenHeight/2)+5}, /**< bit below & right of center */
-  {0,0}, {0,0},				    /* last & next pos */
-  COLOR_ORANGE,
-  &layer1,
 };
 
 /** Moving Layer
@@ -78,9 +71,8 @@ typedef struct MovLayer_s {
 } MovLayer;
 
 /* initial value of {0,0} will be overwritten */
-MovLayer ml3 = { &layer3, {1,1}, 0 }; /**< not all layers move */
-MovLayer ml1 = { &layer1, {1,2}, &ml3 }; 
-MovLayer ml0 = { &layer0, {2,1}, &ml1 }; 
+/**< not all layers move */
+MovLayer ml0 = { &layer0, {2,1}, 0 }; 
 
 void movLayerDraw(MovLayer *movLayers, Layer *layers)
 {
@@ -148,7 +140,7 @@ void mlAdvance(MovLayer *ml, Region *fence)
 }
 
 
-u_int bgColor = COLOR_BLUE;     /**< The background color */
+u_int bgColor = COLOR_BLACK;     /**< The background color */
 int redrawScreen = 1;           /**< Boolean for whether screen needs to be redrawn */
 
 Region fieldFence;		/**< fence around playing field  */
