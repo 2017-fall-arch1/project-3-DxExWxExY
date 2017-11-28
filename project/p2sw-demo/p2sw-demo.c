@@ -9,6 +9,8 @@
 
 
 /** Initializes everything, clears the screen, draws "hello" and the circle */
+
+
 void main()
 {
   configureClocks();
