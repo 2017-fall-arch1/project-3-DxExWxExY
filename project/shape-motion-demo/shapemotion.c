@@ -1,11 +1,3 @@
-/** \file shapemotion.c
- *  \brief This is a simple shape motion demo.
- *  This demo creates two layers containing shapes.
- *  One layer contains a rectangle and the other a circle.
- *  While the CPU is running the green LED is on, and
- *  when the screen does not need to be redrawn the CPU
- *  is turned off along with the green LED.
- */  
 #include <msp430.h>
 #include <libTimer.h>
 #include <lcdutils.h>
@@ -15,7 +7,6 @@
 #include <abCircle.h>
 
 #define GREEN_LED BIT6
-#define SWITCHES (BIT0 | BIT1 | BIT2 | BIT3)
 
 /*SHAPE DEFINITION SECTION {width, height}  */
 AbRect ball = {abRectGetBounds, abRectCheck, {5,5}};
@@ -114,8 +105,7 @@ MovLayer ml0 = {&layer0, {3,0}, 0};
 
 
 
-void movLayerDraw(MovLayer *movLayers, Layer *layers)
-{
+void movLayerDraw(MovLayer *movLayers, Layer *layers) {
   int row, col;
   MovLayer *movLayer;
 
@@ -160,8 +150,7 @@ void movLayerDraw(MovLayer *movLayers, Layer *layers)
  *  \param ml The moving shape to be advanced
  *  \param fence The region which will serve as a boundary for ml
  */
-void mlAdvance(MovLayer *ml, Region *fence)
-{
+void mlAdvance(MovLayer *ml, Region *fence) {
   Vec2 newPos;
   u_char axis;
   Region shapeBoundary;
@@ -189,10 +178,8 @@ Region pRFence;
 
 
 /** Initializes everything, enables interrupts and green LED, 
- *  and handles the rendering for the screen
- */
-void main()
-{
+ *  and handles the rendering for the screen */
+void main() {
   P1DIR |= GREEN_LED;		/**< Green led on when CPU on */		
   P1OUT |= GREEN_LED;
 
@@ -222,7 +209,6 @@ void main()
     movLayerDraw(&ml0, &layer0);
     movPaddle();
    }
- 
 }
 
 /*THIS METHOD DETECTS IF A BUTTON IS PRESSED*/
