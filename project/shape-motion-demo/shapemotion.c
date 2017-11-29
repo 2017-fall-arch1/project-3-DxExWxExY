@@ -25,12 +25,12 @@ AbRect pR = {abRectGetBounds, abRectCheck, {1,10}};
 /*OUTLINE DEFINITION SECTION*/
 AbRectOutline fieldOutline = {	/* playing field */
   abRectOutlineGetBounds, abRectOutlineCheck,   
-  {screenWidth/2-3, screenHeight/2-3}
+  {screenWidth/2-2, screenHeight/2-2}
 };
 
 AbRectOutline pLOut = {	//Left Paddle Outline
   abRectOutlineGetBounds, abRectOutlineCheck,   
-  {2, 10}
+  {2,10}
 };
 
 AbRectOutline pROut = {	//Right Paddle Outline
@@ -60,7 +60,7 @@ Layer pr = { //Right Paddle
   {screenWidth-6, (screenHeight/2)},
   {0,0}, {0,0},	      
   COLOR_WHITE,
-  &plo,
+  &pl,
 };
 
 Layer pro = { //Right Paddle Outline
@@ -76,7 +76,7 @@ Layer fieldLayer = {		/* playing field as a layer */
   {screenWidth/2, screenHeight/2},          /**< center */
   {0,0}, {0,0},				    /* last & next pos */
   COLOR_BLACK,
-  &pro
+  &pr
 };
 
 Layer layer0 = { //Ball
@@ -97,56 +97,22 @@ typedef struct MovLayer_s {
   struct MovLayer_s *next;
 } MovLayer;
 
-/* initial value of {0,0} will be overwritten */
+
 /*LEFT PADDLE UP*/
-MovLayer pLU = {&pl, {0,2}, 0};
-MovLayer pLOU = {&plo, {0,2}, &pLU};
+MovLayer pLU = {&pl, {0,3}, 0};
+MovLayer pLOU = {&plo, {0,3}, &pLU};
 /*LEFT PADDLE DOWN*/
-MovLayer pLD = {&pl, {0,-2}, 0};
-MovLayer pLOD = {&plo, {0,-2}, &pLD};
+MovLayer pLD = {&pl, {0,-3}, 0};
+MovLayer pLOD = {&plo, {0,-3}, &pLD};
 /*RIGHT PADDLE UP*/
-MovLayer pRU = {&pr, {0,2}, 0};
-MovLayer pROU = {&pro, {0,2}, &pRU};
+MovLayer pRU = {&pr, {0,3}, 0};
 /*RIGHT PADDLE DOWN*/
-MovLayer pRD = {&pr, {0,-2}, 0};
-MovLayer pROD = {&pro, {0,-2}, &pRD};
+MovLayer pRD = {&pr, {0,-3}, 0};
+/*BALL*/
+MovLayer ml0 = {&layer0, {3,0}, 0};
 
-MovLayer ml0 = {&layer0, {1,2}, 0};
 
-void movPaddle() {
-  char p2val = P2IN;
-  if (p2val & BIT0) {
-    P2IES |= (p2val & SWITCHES);
-  }
-  else if (p2val | BIT0) {
-    ml0.next = *pLOU;
-  }
-  /* if (p2val & SW2) { */
-  /*   swd2 = 0; */
-  /*   P2IES |= (p2val & SWITCHES); */
-  /* } */
-  /* else if (p2val | SW2) { */
-  /*   swd2 = 1; */
-  /*   clocksSong(); */
-  /* } */
-  /* if (p2val & SW3) { */
-  /*   swd3 = 0; */
-  /*   P2IES |= (p2val & SWITCHES); */
-  /* } */
-  /* else if (p2val | SW3) { */
-  /*   swd3 = 1; */
-  /*   imBlue(); */
-  /* } */
-  /* if (p2val & SW4) { */
-  /*   swd4 = 0; */
-  /*   P2IES |= (p2val & SWITCHES); */
-  /* } */
-  /* else if (p2val | SW4) { */
-  /*   swd4 = 1; */
-  /*   xfiles(); */
-  /* } */
-  ml0.next = 0;
-}
+
 
 void movLayerDraw(MovLayer *movLayers, Layer *layers)
 {
@@ -240,8 +206,7 @@ void main()
 
 
   layerGetBounds(&fieldLayer, &fieldFence);
-  //layerGetBounds(&plo, &pLFence);
-  //layerGetBounds(&pro, &pRFence);
+  layerGetBounds(&pl, &pLFence);
 
   enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
@@ -255,6 +220,33 @@ void main()
     P1OUT |= GREEN_LED;       /**< Green led on when CPU on */
     redrawScreen = 0;
     movLayerDraw(&ml0, &layer0);
+    movPaddle();
+   }
+ 
+}
+
+/*THIS METHOD DETECTS IF A BUTTON IS PRESSED*/
+void movPaddle() {
+  int sw1, sw2, sw3, sw4;
+  sw1 = (P2IN & BIT0)? 0 : 1;
+  sw2 = (P2IN & BIT1)? 0 : 1;
+  sw3 = (P2IN & BIT2)? 0 : 1;
+  sw4 = (P2IN & BIT3)? 0 : 1;
+  if (sw1) {
+    movLayerDraw(&pLU, &pl);
+    mlAdvance(&pLU, &fieldFence);
+  }
+  if (sw2) {
+    movLayerDraw(&pLD, &pl);
+    mlAdvance(&pLD, &fieldFence);
+  }
+  if (sw3) {
+    movLayerDraw(&pRU, &pr);
+    mlAdvance(&pRU, &fieldFence);
+  }
+  if (sw4) {
+    movLayerDraw(&pRD, &pr);
+    mlAdvance(&pRD, &fieldFence);
   }
 }
 
@@ -266,10 +258,7 @@ void wdt_c_handler()
   count ++;
   if (count == 15) {
     mlAdvance(&ml0, &fieldFence);
-    //mlAdvance(&ml0, &pLFence);
-    //mlAdvance(&ml0, &pRFence);
-    if (p2sw_read())
-      redrawScreen = 1;
+    redrawScreen = 1;
     count = 0;
   } 
   P1OUT &= ~GREEN_LED;		    /**< Green LED off when cpu off */
