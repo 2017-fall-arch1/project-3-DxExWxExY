@@ -5,6 +5,7 @@
 #include <p2switches.h>
 #include <shape.h>
 #include <abCircle.h>
+#include "buzzer.h"
 
 #define GREEN_LED BIT6
 
@@ -22,7 +23,7 @@ AbRectOutline fieldOutline = {	/* playing field */
 /*LAYER DEFINITION SECTION*/
 Layer pl = { //Left Paddle
   (AbShape *)&pL,
-  {5, (screenHeight/2)}, 
+  {4, (screenHeight/2)}, 
   {0,0}, {0,0},		
   COLOR_WHITE,
   0
@@ -30,7 +31,7 @@ Layer pl = { //Left Paddle
   
 Layer pr = { //Right Paddle 
   (AbShape *)&pR,
-  {screenWidth-7, (screenHeight/2)},
+  {screenWidth-6, (screenHeight/2)},
   {0,0}, {0,0},	      
   COLOR_WHITE,
   &pl,
@@ -64,15 +65,15 @@ typedef struct MovLayer_s {
 
 
 /*LEFT PADDLE UP*/
-MovLayer pLU = {&pl, {0,-1}, 0};
+MovLayer pLU = {&pl, {0,-2}, 0};
 /*LEFT PADDLE DOWN*/
-MovLayer pLD = {&pl, {0,1}, 0};
+MovLayer pLD = {&pl, {0,2}, 0};
 /*RIGHT PADDLE UP*/
-MovLayer pRU = {&pr, {0,1}, 0};
+MovLayer pRU = {&pr, {0,2}, 0};
 /*RIGHT PADDLE DOWN*/
-MovLayer pRD = {&pr, {0,-1}, 0};
+MovLayer pRD = {&pr, {0,-2}, 0};
 /*BALL*/
-MovLayer ml0 = {&layer0, {-1,0}, 0};
+MovLayer ml0 = {&layer0, {1,1}, 0};
 
 /*REGION DEFINITIONS*/
 Region fieldFence;		/**< fence around playing field  */
@@ -137,10 +138,10 @@ void mlAdvance(MovLayer *ml, Region *fence) {
     abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
     for (axis = 0; axis < 2; axis ++) {
       if (shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) {
-	newPos.axes[axis] += screenHeight-23;
+	newPos.axes[axis] -= -2;
       }
       if (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) {
-	newPos.axes[axis] -= screenHeight-23;
+	newPos.axes[axis] += -2;
       }
     } /**< for axis */
     ml->layer->posNext = newPos;
@@ -168,6 +169,8 @@ void paddleAdvance(MovLayer *ml, MovLayer *pLU, MovLayer *pRU, Region *fence) {
 	  (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) ) {
 	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
 	newPos.axes[axis] += (2*velocity);
+    buzzer_set_period(1000);
+    
 	
       }	/**< if outside of fence */
       /*PADDLE LEFT COLISION*/
@@ -176,13 +179,18 @@ void paddleAdvance(MovLayer *ml, MovLayer *pLU, MovLayer *pRU, Region *fence) {
       	  (shapeBoundary.topLeft.axes[1]+10 > pLFence.topLeft.axes[1])) {
       	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
       	newPos.axes[axis] += (2*velocity);
+        buzzer_set_period(4000);
+        break;
+        
       }
       /*PADDLE RIGHT COLISION*/
       if ((shapeBoundary.botRight.axes[0] >  pRFence.topLeft.axes[0]) &&
       	  (shapeBoundary.botRight.axes[1]-10 < pRFence.botRight.axes[1]) &&
       	  (shapeBoundary.topLeft.axes[1]+10 > pRFence.topLeft.axes[1])) {
-      	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
+        int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
       	newPos.axes[axis] += (2*velocity);
+        buzzer_set_period(4000);
+        break;
       }
     } /*< for axis */
     ml->layer->posNext = newPos;
@@ -207,11 +215,12 @@ void main() {
   shapeInit();
   p2sw_init(1);
   shapeInit();
+  buzzer_init();
 
   /*WELCOME SCREEN*/
   clearScreen(COLOR_BLACK);
   drawString5x7(screenWidth/2,screenHeight/2, "PONG", COLOR_WHITE, COLOR_BLACK);
-  __delay_cycles(80000000);
+  __delay_cycles(16000000);
   clearScreen(COLOR_BLACK);
   
   layerInit(&layer0);
@@ -233,6 +242,8 @@ void main() {
     redrawScreen = 0;
     movLayerDraw(&ml0, &layer0);
     movPaddle();
+    __delay_cycles(200000);
+    buzzer_set_period(0);
    }
 }
 
@@ -258,6 +269,9 @@ void movPaddle() {
   if (sw4) {
     movLayerDraw(&pRD, &pr);
     mlAdvance(&pRD,&fieldFence);
+  }
+  if (sw1 && sw2 && sw3 && sw4) {
+      WDTCTL = 0;  
   }
 }
 
