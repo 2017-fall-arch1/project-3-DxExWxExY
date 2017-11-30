@@ -9,24 +9,14 @@
 #define GREEN_LED BIT6
 
 /*SHAPE DEFINITION SECTION {width, height}  */
-AbRect ball = {abRectGetBounds, abRectCheck, {5,5}};
-AbRect pL = {abRectGetBounds, abRectCheck, {1,10}};
-AbRect pR = {abRectGetBounds, abRectCheck, {1,10}};
+AbRect ball = {abRectGetBounds, abRectCheck, {4,4}};
+AbRect pL = {abRectGetBounds, abRectCheck, {1,11}};
+AbRect pR = {abRectGetBounds, abRectCheck, {1,11}};
 
 /*OUTLINE DEFINITION SECTION*/
 AbRectOutline fieldOutline = {	/* playing field */
   abRectOutlineGetBounds, abRectOutlineCheck,   
-  {screenWidth/2-2, screenHeight/2-2}
-};
-
-AbRectOutline pLOut = {	//Left Paddle Outline
-  abRectOutlineGetBounds, abRectOutlineCheck,   
-  {2,10}
-};
-
-AbRectOutline pROut = {	//Right Paddle Outline
-  abRectOutlineGetBounds, abRectOutlineCheck,   
-  {2,10}
+  {screenWidth/2-1, screenHeight/2-1}
 };
 
 /*LAYER DEFINITION SECTION*/
@@ -37,34 +27,18 @@ Layer pl = { //Left Paddle
   COLOR_WHITE,
   0
 };
-
-Layer plo = { //Left Paddle
-  (AbShape *)&pLOut,
-  {5, (screenHeight/2)}, 
-  {0,0}, {0,0},		
-  COLOR_GREEN,
-  &pl,
-};
   
 Layer pr = { //Right Paddle 
   (AbShape *)&pR,
-  {screenWidth-6, (screenHeight/2)},
+  {screenWidth-7, (screenHeight/2)},
   {0,0}, {0,0},	      
   COLOR_WHITE,
   &pl,
 };
 
-Layer pro = { //Right Paddle Outline
-  (AbShape *)&pROut,
-  {screenWidth-6, (screenHeight/2)}, 
-  {0,0}, {0,0},		
-  COLOR_GREEN,
-  &pr,
-};
-
 Layer fieldLayer = {		/* playing field as a layer */
   (AbShape *) &fieldOutline,
-  {screenWidth/2, screenHeight/2},          /**< center */
+  {screenWidth/2-1, screenHeight/2},          /**< center */
   {0,0}, {0,0},				    /* last & next pos */
   COLOR_BLACK,
   &pr
@@ -74,7 +48,7 @@ Layer layer0 = { //Ball
   (AbShape *)&ball,
   {(screenWidth/2), (screenHeight/2)}, 
   {0,0}, {0,0},	  
-  COLOR_RED,
+  COLOR_WHITE,
   &fieldLayer,
 };
 
@@ -90,19 +64,20 @@ typedef struct MovLayer_s {
 
 
 /*LEFT PADDLE UP*/
-MovLayer pLU = {&pl, {0,3}, 0};
-MovLayer pLOU = {&plo, {0,3}, &pLU};
+MovLayer pLU = {&pl, {0,1}, 0};
 /*LEFT PADDLE DOWN*/
-MovLayer pLD = {&pl, {0,-3}, 0};
-MovLayer pLOD = {&plo, {0,-3}, &pLD};
+MovLayer pLD = {&pl, {0,-1}, 0};
 /*RIGHT PADDLE UP*/
-MovLayer pRU = {&pr, {0,3}, 0};
+MovLayer pRU = {&pr, {0,1}, 0};
 /*RIGHT PADDLE DOWN*/
-MovLayer pRD = {&pr, {0,-3}, 0};
+MovLayer pRD = {&pr, {0,-1}, 0};
 /*BALL*/
-MovLayer ml0 = {&layer0, {3,0}, 0};
+MovLayer ml0 = {&layer0, {-1,0}, 0};
 
-
+/*REGION DEFINITIONS*/
+Region fieldFence;		/**< fence around playing field  */
+Region pLFence;
+Region pRFence;
 
 
 void movLayerDraw(MovLayer *movLayers, Layer *layers) {
@@ -152,18 +127,66 @@ void movLayerDraw(MovLayer *movLayers, Layer *layers) {
  */
 void mlAdvance(MovLayer *ml, Region *fence) {
   Vec2 newPos;
+  Vec2 paddleL;
+  Vec2 paddleR;
+  u_char axis;
+  int velocity;
+  Region shapeBoundary;
+  for (; ml; ml = ml->next) {
+    vec2Add(&newPos, &ml->layer->posNext, &ml->velocity); // fence
+    abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
+    for (axis = 0; axis < 2; axis ++) {
+      if (shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) {
+	//	velocity  = ml->velocity.axes[axis];
+	newPos.axes[axis] += screenHeight-11;
+      }
+      if (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) {
+	//velocity  = -ml->velocity.axes[axis];
+	newPos.axes[axis] -= screenHeight-11;
+      }
+    } /**< for axis */
+    ml->layer->posNext = newPos;
+  } /**< for ml */
+}
+
+void paddleAdvance(MovLayer *ml, MovLayer *pLU, MovLayer *pRU, Region *fence) {
+  Vec2 newPos;
+  Vec2 paddleL;
+  Vec2 paddleR;
   u_char axis;
   Region shapeBoundary;
   for (; ml; ml = ml->next) {
-    vec2Add(&newPos, &ml->layer->posNext, &ml->velocity);
+    vec2Add(&newPos, &ml->layer->posNext, &ml->velocity); // BALL
     abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
+    
+    vec2Add(&paddleL, &pLU->layer->posNext, &pLU->velocity); //Paddle left
+    abShapeGetBounds(pLU->layer->abShape, &paddleL, &pLFence);
+
+    vec2Add(&paddleR, &pRU->layer->posNext, &pRU->velocity); //Paddle right
+    abShapeGetBounds(pRU->layer->abShape, &paddleR, &pRFence);
+    
     for (axis = 0; axis < 2; axis ++) {
       if ((shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) ||
 	  (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) ) {
 	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
 	newPos.axes[axis] += (2*velocity);
+	
       }	/**< if outside of fence */
-    } /**< for axis */
+      /*PADDLE LEFT COLISION*/
+      if ((shapeBoundary.topLeft.axes[0] <  pLFence.botRight.axes[0]) &&
+      	  (shapeBoundary.botRight.axes[1]-10 < pLFence.botRight.axes[1]) &&
+      	  (shapeBoundary.topLeft.axes[1]+10 > pLFence.topLeft.axes[1])) {
+      	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
+      	newPos.axes[axis] += (2*velocity);
+      }
+      /*PADDLE RIGHT COLISION*/
+      if ((shapeBoundary.botRight.axes[0] >  pRFence.topLeft.axes[0]) &&
+      	  (shapeBoundary.botRight.axes[1]-10 < pRFence.botRight.axes[1]) &&
+      	  (shapeBoundary.topLeft.axes[1]+10 > pRFence.topLeft.axes[1])) {
+      	int velocity = ml->velocity.axes[axis] = -ml->velocity.axes[axis];
+      	newPos.axes[axis] += (2*velocity);
+      }
+    } /*< for axis */
     ml->layer->posNext = newPos;
   } /**< for ml */
 }
@@ -172,9 +195,7 @@ void mlAdvance(MovLayer *ml, Region *fence) {
 u_int bgColor = COLOR_BLACK;     /**< The background color */
 int redrawScreen = 1;           /**< Boolean for whether screen needs to be redrawn */
 
-Region fieldFence;		/**< fence around playing field  */
-Region pLFence;
-Region pRFence;
+
 
 
 /** Initializes everything, enables interrupts and green LED, 
@@ -220,19 +241,19 @@ void movPaddle() {
   sw4 = (P2IN & BIT3)? 0 : 1;
   if (sw1) {
     movLayerDraw(&pLU, &pl);
-    mlAdvance(&pLU, &fieldFence);
+    mlAdvance(&pLU,&fieldFence);
   }
   if (sw2) {
     movLayerDraw(&pLD, &pl);
-    mlAdvance(&pLD, &fieldFence);
+    mlAdvance(&pLD,&fieldFence);
   }
   if (sw3) {
     movLayerDraw(&pRU, &pr);
-    mlAdvance(&pRU, &fieldFence);
+    mlAdvance(&pRU,&fieldFence);
   }
   if (sw4) {
     movLayerDraw(&pRD, &pr);
-    mlAdvance(&pRD, &fieldFence);
+    mlAdvance(&pRD,&fieldFence);
   }
 }
 
@@ -242,8 +263,8 @@ void wdt_c_handler()
   static short count = 0;
   P1OUT |= GREEN_LED;		      /**< Green LED on when cpu on */
   count ++;
-  if (count == 15) {
-    mlAdvance(&ml0, &fieldFence);
+  if (count == 5) {
+    paddleAdvance(&ml0,&pLD,&pRD,&fieldFence);
     redrawScreen = 1;
     count = 0;
   } 
