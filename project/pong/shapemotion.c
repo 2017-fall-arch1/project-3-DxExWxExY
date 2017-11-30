@@ -64,9 +64,9 @@ typedef struct MovLayer_s {
 
 
 /*LEFT PADDLE UP*/
-MovLayer pLU = {&pl, {0,1}, 0};
+MovLayer pLU = {&pl, {0,-1}, 0};
 /*LEFT PADDLE DOWN*/
-MovLayer pLD = {&pl, {0,-1}, 0};
+MovLayer pLD = {&pl, {0,1}, 0};
 /*RIGHT PADDLE UP*/
 MovLayer pRU = {&pr, {0,1}, 0};
 /*RIGHT PADDLE DOWN*/
@@ -137,12 +137,10 @@ void mlAdvance(MovLayer *ml, Region *fence) {
     abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
     for (axis = 0; axis < 2; axis ++) {
       if (shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) {
-	//	velocity  = ml->velocity.axes[axis];
-	newPos.axes[axis] += screenHeight-11;
+	newPos.axes[axis] += screenHeight-23;
       }
       if (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) {
-	//velocity  = -ml->velocity.axes[axis];
-	newPos.axes[axis] -= screenHeight-11;
+	newPos.axes[axis] -= screenHeight-23;
       }
     } /**< for axis */
     ml->layer->posNext = newPos;
@@ -209,12 +207,18 @@ void main() {
   shapeInit();
   p2sw_init(1);
   shapeInit();
+
+  /*WELCOME SCREEN*/
+  clearScreen(COLOR_BLACK);
+  drawString5x7(screenWidth/2,screenHeight/2, "PONG", COLOR_WHITE, COLOR_BLACK);
+  __delay_cycles(80000000);
+  clearScreen(COLOR_BLACK);
+  
   layerInit(&layer0);
   layerDraw(&layer0);
 
 
   layerGetBounds(&fieldLayer, &fieldFence);
-  layerGetBounds(&pl, &pLFence);
 
   enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */

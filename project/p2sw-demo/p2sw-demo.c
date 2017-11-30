@@ -21,7 +21,7 @@ void main()
 
   drawString5x7(width/2,height/2, "CONKE AF", COLOR_WHITE, COLOR_BLACK);
 
-  __delay_cycles(32000000);
+  __delay_cycles(800000000);
 
   clearScreen(COLOR_BLACK);
   
