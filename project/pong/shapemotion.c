@@ -69,13 +69,13 @@ typedef struct MovLayer_s {
 
 
 /*LEFT PADDLE UP*/
-MovLayer pLU = {&pl, {0,-3}, 0};
+MovLayer pLU = {&pl, {0,-4}, 0};
 /*LEFT PADDLE DOWN*/
-MovLayer pLD = {&pl, {0,3}, 0};
+MovLayer pLD = {&pl, {0,4}, 0};
 /*RIGHT PADDLE UP*/
-MovLayer pRU = {&pr, {0,3}, 0};
+MovLayer pRU = {&pr, {0,4}, 0};
 /*RIGHT PADDLE DOWN*/
-MovLayer pRD = {&pr, {0,-3}, 0};
+MovLayer pRD = {&pr, {0,-4}, 0};
 /*BALL*/
 MovLayer ml0 = {&layer0, {1,1}, 0};
 
@@ -142,10 +142,10 @@ void mlAdvance(MovLayer *ml, Region *fence) {
         abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
         for (axis = 0; axis < 2; axis ++) {
             if (shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) {
-                newPos.axes[axis] -= -3;
+                newPos.axes[axis] -= -4;
             }
             if (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) {
-                newPos.axes[axis] += -2;
+                newPos.axes[axis] += -3;
             }
         } /**< for axis */
         ml->layer->posNext = newPos;
@@ -304,7 +304,7 @@ void startup() {
             ml0.velocity.axes[1] = 4*dir2;
             goto out;
         }
-        if (sw1 && sw3 && sw4) {
+        if (sw1 && sw4) {
             WDTCTL = 0;  
         }   
     }
