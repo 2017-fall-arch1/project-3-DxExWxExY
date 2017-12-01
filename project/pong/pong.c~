@@ -6,8 +6,9 @@
 #include <shape.h>
 #include <abCircle.h>
 #include "buzzer.h"
+#include "move.h"
+#include "pong.h"
 
-#define GREEN_LED BIT6
 static char sl = '0';
 static char sr = '0';
 static int s1 = 0;
@@ -61,11 +62,6 @@ Layer layer0 = { //Ball
  *  Linked list of layer references
  *  Velocity represents one iteration of change (direction & magnitude)
  */
-typedef struct MovLayer_s {
-    Layer *layer;
-    Vec2 velocity;
-    struct MovLayer_s *next;
-} MovLayer;
 
 
 /*LEFT PADDLE UP*/
@@ -120,10 +116,6 @@ void movLayerDraw(MovLayer *movLayers, Layer *layers) {
         } // for row
     } // for moving layer being updated
 }	  
-
-
-
-//Region fence = {{10,30}, {SHORT_EDGE_PIXELS-10, LONG_EDGE_PIXELS-10}}; /**< Create a fence region */
 
 /** Advances a moving shape within a fence
  *  
@@ -250,7 +242,8 @@ void main() {
         P1OUT |= GREEN_LED;       /**< Green led on when CPU on */
         redrawScreen = 0;
         movLayerDraw(&ml0, &layer0);
-        movPaddle();
+	move(); //Assembly Function
+	//movPaddle(); //C funtion
         score();
         __delay_cycles(200000);
         buzzer_set_period(0);
@@ -262,7 +255,7 @@ void startup() {
     clearScreen(COLOR_BLACK);
     drawString5x7(screenWidth/2 -11,screenHeight/2 -40, "PONG", COLOR_WHITE, COLOR_BLACK);
     drawString5x7(6,screenHeight/2 +40, "E:S1 M:S2 H:S3 X:S4", COLOR_WHITE, COLOR_BLACK);
-    int sw1, sw2, sw3, sw4, dir1, dir2;
+    int dir1, dir2;
     dir1 = -1;
     dir2 = 1;
 //     int random = rand();
@@ -280,31 +273,27 @@ void startup() {
 //         dir2 = 1;
 //     }
     while (1) {
-        sw1 = (P2IN & BIT0)? 0 : 1;
-        sw2 = (P2IN & BIT1)? 0 : 1;
-        sw3 = (P2IN & BIT2)? 0 : 1;
-        sw4 = (P2IN & BIT3)? 0 : 1;
-        if (sw1) {
+        if (!(P2IN & BIT0)) {
             ml0.velocity.axes[0] = 1*dir1;
             ml0.velocity.axes[1] = 1*dir2;
             goto out;
         }
-        if (sw2) {
+        if (!(P2IN & BIT1)) {
             ml0.velocity.axes[0] = 2*dir1;
             ml0.velocity.axes[1] = 2*dir2;
             goto out;
         }
-        if (sw3) {
+        if (!(P2IN & BIT2)) {
             ml0.velocity.axes[0] = 3*dir1;
             ml0.velocity.axes[1] = 3*dir2;
             goto out;
         }
-        if (sw4) {
+        if (!(P2IN & BIT3)) {
             ml0.velocity.axes[0] = 4*dir1;
             ml0.velocity.axes[1] = 4*dir2;
             goto out;
         }
-        if (sw1 && sw4) {
+        if ((!(P2IN & BIT0)) && (!(P2IN & BIT3))) {
             WDTCTL = 0;  
         }   
     }
@@ -395,29 +384,24 @@ void score() {
 
 /*THIS METHOD DETECTS IF A BUTTON IS PRESSED
  TO MOVE A PADDLE UP OR DOWN RESPECTIVELY*/
-void movPaddle() {
-    int sw1, sw2, sw3, sw4;
-    sw1 = (P2IN & BIT0)? 0 : 1;
-    sw2 = (P2IN & BIT1)? 0 : 1;
-    sw3 = (P2IN & BIT2)? 0 : 1;
-    sw4 = (P2IN & BIT3)? 0 : 1;
-    if (sw1) {
-        movLayerDraw(&pLU, &pl);
-        mlAdvance(&pLU,&fieldFence);
+void moveC() {
+    if (!(P2IN & BIT0)) {
+      movLayerDraw(&pLU, &pl);
+      mlAdvance(&pLU,&fieldFence);
     }
-    if (sw2) {
+    if (!(P2IN & BIT1)) {
         movLayerDraw(&pLD, &pl);
         mlAdvance(&pLD,&fieldFence);
     }
-    if (sw3) {
+    if (!(P2IN & BIT2)) {
         movLayerDraw(&pRU, &pr);
         mlAdvance(&pRU,&fieldFence);
     }
-    if (sw4) {
+    if (!(P2IN & BIT3)) {
         movLayerDraw(&pRD, &pr);
         mlAdvance(&pRD,&fieldFence);
     }
-    if (sw1 && sw3 && sw4) {
+    if ((!(P2IN & BIT0)) && (!(P2IN & BIT2)) && (!(P2IN & BIT3))) {
         WDTCTL = 0;  
     }
 }

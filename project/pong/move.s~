@@ -1,0 +1,4 @@
+move:	cmp &P2IN, &BIT0	;Checs is SW1 was pressed
+	jnz bt2
+	mov #
+bt2:	
