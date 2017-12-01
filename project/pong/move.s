@@ -1,6 +1,6 @@
 	.arch msp430g2553
 	.p2align 1,0
-	.text
+	.text  
 
 	.data
 	.global BIT0
@@ -27,7 +27,7 @@ BIT3:
 	.global move
 move:
 	cmp.b &P2IN, &BIT0	;Checs is SW1 was pressed
-	jnz SW2
+	jnc SW2
 	mov #pLU, r12		;parameters for movlayerdraw
 	mov #pl, r13
 	call #movLayerDraw
@@ -37,7 +37,7 @@ move:
 	
 SW2:
 	cmp.b &P2IN, &BIT1	;Checs is SW2 was pressed
-	jnz SW3
+	jnc SW3
 	mov #pLD, r12		;parameters for movlayerdraw
 	mov #pl, r13
 	call #movLayerDraw
@@ -46,7 +46,7 @@ SW2:
 	ret
 
 SW3:	cmp.b &P2IN, &BIT0	;Checs is SW3 was pressed
-	jnz SW4
+	jnc SW4
 	mov #pRD, r12		;parameters for movlayerdraw
 	mov #pl, r13
 	call #movLayerDraw
@@ -56,7 +56,7 @@ SW3:	cmp.b &P2IN, &BIT0	;Checs is SW3 was pressed
 
 SW4:
 	cmp.b &P2IN, &BIT0	;Checs is SW4 was pressed
-	jnz END
+	jnc END
 	mov #pLU, r12		;parameters for movlayerdraw
 	mov #pl, r13
 	call #movLayerDraw

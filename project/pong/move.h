@@ -1,6 +1,6 @@
 #ifndef move_included
 #define move_included
 
-void move();
+void move(char p2val);
 
 #endif

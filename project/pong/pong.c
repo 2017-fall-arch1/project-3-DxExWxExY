@@ -242,7 +242,7 @@ void main() {
         P1OUT |= GREEN_LED;       /**< Green led on when CPU on */
         redrawScreen = 0;
         movLayerDraw(&ml0, &layer0);
-	//move(); //Assembly Function
+	//move(P2IN); //Assembly Function
 	moveC(); //C funtion
         score();
         __delay_cycles(200000);
