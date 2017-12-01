@@ -109,13 +109,17 @@
 #define as8 7458
 #define b8 7902
 
+#define w 16000000
+#define h 6000000
+#define q 4000000
+#define e 2000000
+#define s 1000000
+#define t 500000
+
 
 void buzzer_init();
 void buzzer_set_period(short cycles);
-void stillAlive();
-void clocksSong();
-void imBlue();
-void xfiles();
+void win();
 
 
 #endif // included

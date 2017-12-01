@@ -142,7 +142,7 @@ void mlAdvance(MovLayer *ml, Region *fence) {
         abShapeGetBounds(ml->layer->abShape, &newPos, &shapeBoundary);
         for (axis = 0; axis < 2; axis ++) {
             if (shapeBoundary.topLeft.axes[axis] < fence->topLeft.axes[axis]) {
-                newPos.axes[axis] -= -2;
+                newPos.axes[axis] -= -3;
             }
             if (shapeBoundary.botRight.axes[axis] > fence->botRight.axes[axis]) {
                 newPos.axes[axis] += -2;
@@ -230,7 +230,7 @@ void main() {
     shapeInit();
     buzzer_init();
     
-    /*WELCOME SCREEN*/
+    startup();
     
     
     layerInit(&layer0);
@@ -256,39 +256,64 @@ void main() {
         buzzer_set_period(0);
     }
 }
+
+/*STARTUP SCREEN WITH DIFICULTY OPTIONS*/
 void startup() {
     clearScreen(COLOR_BLACK);
-    drawString5x7(screenWidth/2,screenHeight/2 -40, "PONG", COLOR_WHITE, COLOR_BLACK);
-    int sw1, sw2, sw3, sw4;
-    while (true) {
+    drawString5x7(screenWidth/2 -11,screenHeight/2 -40, "PONG", COLOR_WHITE, COLOR_BLACK);
+    drawString5x7(6,screenHeight/2 +40, "E:S1 M:S2 H:S3 X:S4", COLOR_WHITE, COLOR_BLACK);
+    int sw1, sw2, sw3, sw4, dir1, dir2;
+    dir1 = -1;
+    dir2 = 1;
+//     int random = rand();
+//     if (random % 2 == 0) {
+//         dir1 = 1;
+//     }
+//     else {
+//         dir1 = 1;
+//     }
+//     random = rand();
+//     if (random % 2 == 0) {
+//         dir2 = 1;
+//     }
+//     else {
+//         dir2 = 1;
+//     }
+    while (1) {
         sw1 = (P2IN & BIT0)? 0 : 1;
         sw2 = (P2IN & BIT1)? 0 : 1;
         sw3 = (P2IN & BIT2)? 0 : 1;
         sw4 = (P2IN & BIT3)? 0 : 1;
         if (sw1) {
-            movLayerDraw(&pLU, &pl);
-            mlAdvance(&pLU,&fieldFence);
+            ml0.velocity.axes[0] = 1*dir1;
+            ml0.velocity.axes[1] = 1*dir2;
+            goto out;
         }
         if (sw2) {
-            movLayerDraw(&pLD, &pl);
-            mlAdvance(&pLD,&fieldFence);
+            ml0.velocity.axes[0] = 2*dir1;
+            ml0.velocity.axes[1] = 2*dir2;
+            goto out;
         }
         if (sw3) {
-            movLayerDraw(&pRU, &pr);
-            mlAdvance(&pRU,&fieldFence);
+            ml0.velocity.axes[0] = 3*dir1;
+            ml0.velocity.axes[1] = 3*dir2;
+            goto out;
         }
         if (sw4) {
-            movLayerDraw(&pRD, &pr);
-            mlAdvance(&pRD,&fieldFence);
+            ml0.velocity.axes[0] = 4*dir1;
+            ml0.velocity.axes[1] = 4*dir2;
+            goto out;
         }
         if (sw1 && sw3 && sw4) {
             WDTCTL = 0;  
         }   
     }
-    __delay_cycles(16000000);
+    out: ;
     clearScreen(COLOR_BLACK);
 }
-/*METHOD DISPLAYS THE SCORE OF THE PLAYERS*/
+
+/*METHOD DISPLAYS THE SCORE OF THE PLAYERS
+ * BY "CONVERTING" A INT TO CHAR*/
 void score() {
     switch (s1) {
         case 1:
@@ -322,9 +347,8 @@ void score() {
             sl = '0';
             break;
         default:
-            clearScreen(COLOR_BLACK);
-            drawString5x7(10, 40, "PLAYER 1 WON", COLOR_WHITE, COLOR_BLACK);
-            __delay_cycles(32000000);
+            drawString5x7(30, screenHeight/2, "PLAYER 1 WON", COLOR_WHITE, COLOR_BLACK);
+            win();
             WDTCTL = 0; 
             break;
     }
@@ -360,9 +384,8 @@ void score() {
             sr = '0';
             break;
         default:
-            clearScreen(COLOR_BLACK);
-            drawString5x7(10, screenHeight/2, "PLAYER 2 WON", COLOR_WHITE, COLOR_BLACK);
-            __delay_cycles(32000000);
+            drawString5x7(30, screenHeight/2, "PLAYER 2 WON", COLOR_WHITE, COLOR_BLACK);
+            win();
             WDTCTL = 0; 
             break;
     }
@@ -370,7 +393,8 @@ void score() {
     drawChar5x7(screenWidth/2 +30, 10, sr, COLOR_WHITE, COLOR_BLACK);
 }
 
-/*THIS METHOD DETECTS IF A BUTTON IS PRESSED*/
+/*THIS METHOD DETECTS IF A BUTTON IS PRESSED
+ TO MOVE A PADDLE UP OR DOWN RESPECTIVELY*/
 void movPaddle() {
     int sw1, sw2, sw3, sw4;
     sw1 = (P2IN & BIT0)? 0 : 1;
