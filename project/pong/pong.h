@@ -9,6 +9,10 @@ typedef struct MovLayer_s {
     struct MovLayer_s *next;
 } MovLayer;
 
+extern MovLayer pLU, pLD, pRU, pRD;
+extern Region fieldFecne;
+extern Layer pl, pr;
+
 void movLayerDraw(MovLayer *movLayers, Layer *layers);
 void mlAdvance(MovLayer *ml, Region *fence);
 void paddleAdvance(MovLayer *ml, MovLayer *pLU, MovLayer *pRU, Region *fence);

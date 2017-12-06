@@ -242,8 +242,8 @@ void main() {
         P1OUT |= GREEN_LED;       /**< Green led on when CPU on */
         redrawScreen = 0;
         movLayerDraw(&ml0, &layer0);
-	//move(P2IN); //Assembly Function
-	moveC(); //C funtion
+	move(); //Assembly Function
+	//moveC(); //C funtion
         score();
         __delay_cycles(200000);
         buzzer_set_period(0);
@@ -382,6 +382,23 @@ void score() {
     drawChar5x7(screenWidth/2 +30, 10, sr, COLOR_WHITE, COLOR_BLACK);
 }
 
+/*AUXILIARY METHOD FOR THE ASSEMBLY FUNCTION*/
+void lup() {
+    movLayerDraw(&pLU, &pl);
+    mlAdvance(&pLU,&fieldFence);
+}
+void ldw () {
+    movLayerDraw(&pLD, &pl);
+    mlAdvance(&pLD,&fieldFence);
+}
+void rup () {
+    movLayerDraw(&pRU, &pr);
+    mlAdvance(&pRU,&fieldFence);
+}
+void rdw () {
+    movLayerDraw(&pRD, &pr);
+    mlAdvance(&pRD,&fieldFence);
+}
 /*THIS METHOD DETECTS IF A BUTTON IS PRESSED
  TO MOVE A PADDLE UP OR DOWN RESPECTIVELY*/
 void moveC() {
